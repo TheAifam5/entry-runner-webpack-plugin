@@ -2,30 +2,44 @@ language: node_js
 cache: yarn
 
 node_js:
-  - '8'
-  - '10'
+  - 'lts/*'
+  - 'node'
 
 install:
   - yarn install --frozen-lockfile
 
-before_script:
-  - yarn lint
+stages:
+  - lint
+  - build
+  - test
+  - deploy
 
-script:
-  - yarn build
-  - yarn test
+jobs:
+  include:
+    - stage: lint
+      script: yarn lint
 
-after_script:
-  - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
-  - rm -rf ./coverage
+    - stage: build
+      script: yarn build
 
-deploy:
-  - provider: npm
-    skip_cleanup: true
-    email: theaifam5@gmail.com
-    node_js: '8'
-    api_key:
-      secure: 5jWvLtWnrwtIRF+MY3eahkP+kHuIWg6RRnZGIdLSjRmk5wE4x61ehhR+FGXc4SX/Efv9kBtHlHJOVfz91MjVU2W+qnXtjcczMys82embzHZtqy2vXZ5tgY1cJ83DNmi4h6XyPhSkdNaSZA7FLo6wEd5wxEqUoCbEI+BbtnHaJvAnU9ObG5/K8wFJ2hr+wFVMNt1L5T/pXlKAePmMkzxYuI6Xu/NHdgk9s0WrQy/vrJsPX63UmT7g86zuy2QJJIJXThUzm33H517tULlX4HMM0QjBnuNrr7PvmPOcieWbVf46uFArUjlMiRK/sTQj/005iGLhe7l7KZ8rYMNcDa+QXtpJSnB4+GwACuclib1RotBopM/wsd0RI0UdXsTKx2a87zlZB5wGRPbow3lYRbPf8K7ORhmsBmSPuAcMSJhky9+McyWd1K7F32rc+p0H0/RFA6+FAuMIxtZgaMJALM6FBm4spNWfwLmReYNELT4J1vFhQMm8C5kX0kDEl4KiS+Qfjso/H/bvkTWqgUX5rWl8TcTwBIZg36cVIgqsFh519AMFxtI8r2LrjWJrZHpsgDUUi/CdEGAEnwngJNBqVxF8K72WBAavN2P5YNdmqUoQBSndykYa5S7ScCpRRBim5aE7eyWOWSyzs1tPb8gnFLvjuJP8bIdvExV05AHr9uUk870=
-    on:
-      tags: true
-      repo: TheAifam5/entry-runner-webpack-plugin
+    - stage: test
+      script: yarn test
+
+    - stage: coverage
+      script:
+        - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+        - rm -rf ./coverage 
+
+    - stage: deploy
+      script: skip
+      node_js: 'lts/*'
+      after_success: skip
+      deploy:
+        provider: npm
+        skip_cleanup: true
+        email: theaifam5@gmail.com
+        api_key:
+          secure: dEmZtRpNyla6SSwCjnjReKQMwwK6K+D9EsgBsWxyrfMrrSm0QTenL0RjvReoHeiUMFhaWxiVfukk0WCAjlmXR5r4Uncwejfc/m0H1Or72s5xad4tdG7lQ0GJ3HMuR/vwEw0oI4Il8mGg/T5nmHfim4Lh2BY8OyxgT1jE/TbUvzD1iDs7mTQjkUgkwix4ebFaGb4v1Pr9qCectmD+oUk8akcG+Qz+330T88qokVY35RuvywZcImySL/ZUi5kMtlEqN5Z5ayNdkobwOF8dz4i0saB83usYXWtGagyWuo4UpcwTv53jh2iyqPveM5o+ubuTorrOwj6tCh4o1uXfcbobWEbP35//wypd9vLDvi7xgnwEMKwD41jaEk3fBFndjo1zmO+j39meODNGmmDcmCwF0r79ODMvtMGESKWFwAVXh/CcSBPzv3ivUQqKE6JsCXsednRbAprJq3Url2pYJ/d6GuXV6rcL2SyHEZBR9OFGe3zxjGWtztq70/ULG07JjuJLEF5qCvUTk4M3ZREmUGumKPc16ggVedRBYj8Tva8HDdoYpf3FwTbiafs1jI0mXOdzVr1y4wMo6HzHTiJnzmR71ZRaJQL/SjLFPy2V45rpV5ct4DjNOHh9kDCqZKsDsq384THrIvJdmg4woXhsqLDeJZmYjvupMnjaCU8px0mGcVk=
+        on:
+          tags: true
+          repo: TheAifam5/entry-runner-webpack-plugin
