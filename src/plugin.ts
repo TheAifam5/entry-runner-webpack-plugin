@@ -1,9 +1,9 @@
-import { Plugin, Compiler, compilation as wc } from 'webpack';
+import { WebpackPluginInstance, Compiler, Compilation } from 'webpack';
 import { fork, ChildProcess } from 'child_process';
 
 const PLUGIN_NAME = 'EntryRunnerWebpackPlugin';
 
-export class EntryRunnerWebpackPlugin implements Plugin {
+export class EntryRunnerWebpackPlugin implements WebpackPluginInstance {
   private isWatching: boolean;
   private rootDir: string;
   private assetName: string;
@@ -17,21 +17,22 @@ export class EntryRunnerWebpackPlugin implements Plugin {
 
   public apply(compiler: Compiler): void {
     if (!this.assetName)
-      this.assetName = compiler.options.output!.filename as string;
+      this.assetName = compiler.options.output.filename as string;
 
     compiler.hooks.afterEmit.tap(PLUGIN_NAME, this.onAfterEmit.bind(this));
     compiler.hooks.watchRun.tap(PLUGIN_NAME, this.onWatchRun.bind(this));
     compiler.hooks.watchClose.tap(PLUGIN_NAME, this.onWatchClose.bind(this));
   }
 
-  private onAfterEmit(compilation: wc.Compilation) {
-    if (!this.isWatching)
-      return;
+  private onAfterEmit(compilation: Compilation) {
+    if (!this.isWatching) return;
 
-    if (!this.child || this.child!.killed || !this.child!.connected) {
-      const assets = compilation.assets;
+    if (!this.child || this.child.killed || !this.child.connected) {
+      const assets = compilation.assetsInfo;
       const name = this.assetName || Object.keys(assets)[0];
-      this.child = fork(assets[name].existsAt, undefined, { cwd: this.rootDir });
+      this.child = fork(assets.get(name).sourceFilename, undefined, {
+        cwd: this.rootDir,
+      });
     }
   }
 
@@ -41,7 +42,7 @@ export class EntryRunnerWebpackPlugin implements Plugin {
 
   private onWatchClose() {
     this.isWatching = false;
-    if (this.child || !this.child!.killed || this.child!.connected)
-      this.child!.kill();
+    if (this.child || !this.child.killed || this.child.connected)
+      this.child.kill();
   }
 }
